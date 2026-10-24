@@ -1,5 +1,5 @@
 #lang eopl
-;Autores: Nombre1 Codigo1, Nombre2 Codigo2
+;Autores: Maria Fernanda Betancourt Montoya 2459510, Oliver De Jesus Arboleda Baez 2459684, Kevin Andres Rosero Romo 2459554
 
 ;; Taller 2 — El intérprete de Cauca.
 ;; El valor procedimiento. Requiere sintaxis.rkt.

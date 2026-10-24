@@ -1,5 +1,5 @@
 #lang eopl
-;Autores: Nombre1 Codigo1, Nombre2 Codigo2
+;Autores: Maria Fernanda Betancourt Montoya 2459510, Oliver De Jesus Arboleda Baez 2459684, Kevin Andres Rosero Romo 2459554
 
 ;; Taller 2 — El intérprete de Cauca.
 ;; Especificación léxica, especificación gramatical, scanner y parser.
@@ -44,9 +44,9 @@
 ;; especificacion-gramatical
 ;; Gramática completa de Cauca (Partes 1 a 4). Los nombres de los
 ;; constructores son los que pide el enunciado.
-;; Nota: el enunciado pide {"of" <numero> "=>" <expresion>}+ en case, pero
-;; SLLGEN solo ofrece arbno (cero o más). La exigencia de al menos una rama
-;; no se puede expresar en la gramática sin cambiar los campos de case-exp.
+;; SLLGEN representa las ramas de case con arbno para conservar los cuatro
+;; campos del constructor case-exp. parser valida después que haya al menos
+;; una rama, como exige la gramática del enunciado.
 (define especificacion-gramatical
   '((programa (expresion) a-program)
  
@@ -116,9 +116,65 @@
 (define scanner
     (sllgen:make-string-scanner especificacion-lexica especificacion-gramatical))
 
+;; parser-sllgen : string -> programa
+;; Convierte el texto de un programa en su árbol de sintaxis abstracta usando
+;; el parser generado por SLLGEN.
+(define parser-sllgen
+  (sllgen:make-string-parser especificacion-lexica especificacion-gramatical))
+
+;; case-con-ramas? : expresion -> boolean
+;; Recorre una expresión completa y verifica que cada case tenga al menos una
+;; rama of; así también se rechazan los case inválidos que estén anidados.
+(define case-con-ramas?
+  (lambda (exp)
+    (letrec ((lista-valida?
+              (lambda (exps)
+                (if (null? exps)
+                    #t
+                    (and (expresion-valida? (car exps))
+                         (lista-valida? (cdr exps))))))
+             (expresion-valida?
+              (lambda (una-exp)
+                (cases expresion una-exp
+                  (lit-exp (dato) #t)
+                  (var-exp (id) #t)
+                  (true-exp () #t)
+                  (false-exp () #t)
+                  (prim-exp (prim rands)
+                    (lista-valida? rands))
+                  (if-exp (test-exp true-exp false-exp)
+                    (and (expresion-valida? test-exp)
+                         (expresion-valida? true-exp)
+                         (expresion-valida? false-exp)))
+                  (let-exp (ids rands body)
+                    (and (lista-valida? rands)
+                         (expresion-valida? body)))
+                  (proc-exp (ids body)
+                    (expresion-valida? body))
+                  (app-exp (rator rands)
+                    (and (expresion-valida? rator)
+                         (lista-valida? rands)))
+                  (letrec-exp (proc-names idss bodies body)
+                    (and (lista-valida? bodies)
+                         (expresion-valida? body)))
+                  (case-exp (control valores acciones default)
+                    (and (not (null? valores))
+                         (expresion-valida? control)
+                         (lista-valida? acciones)
+                         (expresion-valida? default)))))))
+      (expresion-valida? exp))))
+
 ;; parser : string -> programa
-;; Convierte el texto de un programa en su árbol de sintaxis abstracta.
+;; Convierte el texto de un programa en su árbol de sintaxis abstracta y
+;; rechaza los case sin ramas of, que no pertenecen al lenguaje Cauca.
 (define parser
-  (sllgen:make-string-scanner especificacion-lexica especificacion-gramatical))
+  (lambda (texto)
+    (let ((ast (parser-sllgen texto)))
+      (cases programa ast
+        (a-program (exp)
+          (if (case-con-ramas? exp)
+              ast
+              (eopl:error 'parser
+                          "case debe tener al menos una rama of")))))))
 
 (provide (all-defined-out))
