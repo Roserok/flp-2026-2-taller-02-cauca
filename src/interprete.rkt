@@ -22,7 +22,9 @@
   (lambda (proc args)
     (cases procval proc
       (cerradura (ids body env-definicion)
+        ;; misma cantidad de parámetros y argumentos
         (if (= (length ids) (length args))
+            ;; el cuerpo se evalúa en el ambiente donde se definió el proc
             (evaluar-expresion body
                                (ambiente-extendido ids args env-definicion))
             (eopl:error 'apply-procedure
@@ -45,6 +47,7 @@
   (lambda (rands env)
     (if (null? rands)
         '()
+        ;; se evalúa primero la cabeza para respetar el orden izq. a der.
         (let ((primer-valor (evaluar-expresion (car rands) env)))
           (cons primer-valor
                 (evaluar-rands (cdr rands) env))))))
@@ -57,16 +60,20 @@
 (define evaluar-expresion
   (lambda (exp env)
     (cases expresion exp
+      ;; un número se devuelve tal cual
       (lit-exp (dato)
         dato)
+      ;; se busca la variable en el ambiente
       (var-exp (id)
         (apply-env env id))
       (true-exp ()
         #t)
       (false-exp ()
         #f)
+      ;; se evaluan los argumentos y se aplica la primitiva
       (prim-exp (prim rands)
         (evaluar-primitiva prim (evaluar-rands rands env)))
+      ;; la condición debe ser booleana, si no se levanta error
       (if-exp (test-exp true-exp false-exp)
         (let ((test-value (evaluar-expresion test-exp env)))
           (if (boolean? test-value)
@@ -76,13 +83,16 @@
               (eopl:error 'evaluar-expresion
                           "La condicion de if debe ser booleana: ~s"
                           test-value))))
+      ;; los valores se evaluan en el ambiente actual y el cuerpo en el extendido
       (let-exp (ids rands body)
         (evaluar-expresion body
                            (ambiente-extendido ids
                                                (evaluar-rands rands env)
                                                env)))
+      ;; el cuerpo no se evalua, solo se guarda con el ambiente actual
       (proc-exp (ids body)
         (cerradura ids body env))
+      ;; el operador debe ser un procedimiento, si no se levanta error
       (app-exp (rator rands)
         (let ((proc (evaluar-expresion rator env)))
           (if (procval? proc)
@@ -90,13 +100,18 @@
               (eopl:error 'evaluar-expresion
                           "El operador de apply no es un procedimiento: ~s"
                           proc))))
+      ;; el cuerpo se evalua en un ambiente-recursivo con los procedimientos
       (letrec-exp (proc-names idss bodies body)
         (let ((env-recursivo
                (ambiente-recursivo proc-names idss bodies env)))
           (evaluar-expresion body env-recursivo)))
+      ;; la expresion de control se evalua una sola vez y debe ser numero
       (case-exp (control valores acciones default)
         (let ((valor-control (evaluar-expresion control env)))
           (if (number? valor-control)
+              ;; evaluar-rama : lista de numeros x lista de expresiones -> valor
+              ;; Recorre las ramas en orden y evalúa la acción de la primera
+              ;; que coincida; si no hay ninguna, evalúa la rama otherwise.
               (letrec ((evaluar-rama
                         (lambda (resto-valores resto-acciones)
                           (if (null? resto-valores)

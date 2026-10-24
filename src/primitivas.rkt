@@ -69,20 +69,29 @@
 ;; primitiva. Se resuelve con cases sobre el datatype primitiva.
 (define evaluar-primitiva
   (lambda (prim args)
-    (letrec ((valor-absoluto
+    (letrec (;; valor-absoluto : numero -> numero
+             ;; Retorna el valor absoluto de n.
+             (valor-absoluto
               (lambda (n)
                 (if (< n 0) (- 0 n) n)))
+             ;; mcd-dos : entero x entero -> entero
+             ;; Calcula el maximo comun divisor de dos enteros (Euclides).
              (mcd-dos
               (lambda (a b)
                 (if (= b 0)
                     (valor-absoluto a)
                     (mcd-dos b (remainder a b)))))
+             ;; mcm-dos : entero x entero -> entero
+             ;; Calcula el minimo comun multiplo de dos enteros usando el mcd.
              (mcm-dos
               (lambda (a b)
                 (if (or (= a 0) (= b 0))
                     0
                     (/ (* (valor-absoluto a) (valor-absoluto b))
                        (mcd-dos a b)))))
+             ;; reducir : procedimiento x valor x lista -> valor
+             ;; Aplica la operacion de dos argumentos a toda la lista,
+             ;; de izquierda a derecha, partiendo del acumulado.
              (reducir
               (lambda (operacion acumulado resto)
                 (if (null? resto)
@@ -91,6 +100,7 @@
                              (operacion acumulado (car resto))
                              (cdr resto))))))
       (cases primitiva prim
+        ;; aritmeticas n-arias: solo se verifica que sean numeros
         (sum-prim ()
           (exigir-numeros args 'sum-prim)
           (apply + args))
@@ -103,6 +113,7 @@
         (div-prim ()
           (exigir-numeros args 'div-prim)
           (apply / args))
+        ;; unarias numericas
         (add-prim ()
           (exigir-cantidad args 1 'add-prim)
           (exigir-numeros args 'add-prim)
@@ -111,6 +122,7 @@
           (exigir-cantidad args 1 'sub-prim)
           (exigir-numeros args 'sub-prim)
           (- (car args) 1))
+        ;; relacionales: dos numeros, retornan booleano
         (mayor-prim ()
           (exigir-cantidad args 2 'mayor-prim)
           (exigir-numeros args 'mayor-prim)
@@ -131,6 +143,7 @@
           (exigir-cantidad args 2 'igual-prim)
           (exigir-numeros args 'igual-prim)
           (= (car args) (cadr args)))
+        ;; logicas: se verifica que los argumentos sean booleanos
         (not-prim ()
           (exigir-cantidad args 1 'not-prim)
           (exigir-booleanos args 'not-prim)
@@ -143,30 +156,38 @@
           (exigir-cantidad args 2 'or-prim)
           (exigir-booleanos args 'or-prim)
           (or (car args) (cadr args)))
+        ;; primitivas nuevas (Parte 2)
+        ;; abs: valor absoluto de un numero
         (abs-prim ()
           (exigir-cantidad args 1 'abs-prim)
           (exigir-numeros args 'abs-prim)
           (valor-absoluto (car args)))
+        ;; mcd: al menos dos enteros, se reduce de izquierda a derecha
         (mcd-prim ()
           (exigir-minimo args 2 'mcd-prim)
           (exigir-enteros args 'mcd-prim)
           (reducir mcd-dos (car args) (cdr args)))
+        ;; mcm: igual que mcd pero con el mínimo comiun múltiplo
         (mcm-prim ()
           (exigir-minimo args 2 'mcm-prim)
           (exigir-enteros args 'mcm-prim)
           (reducir mcm-dos (car args) (cdr args)))
+        ;; promedio: suma de los argumentos sobre la cantidad
         (promedio-prim ()
           (exigir-minimo args 1 'promedio-prim)
           (exigir-numeros args 'promedio-prim)
           (/ (apply + args) (length args)))
+        ;; xor: verdadero cuando los dos booleanos son distintos
         (xor-prim ()
           (exigir-cantidad args 2 'xor-prim)
           (exigir-booleanos args 'xor-prim)
           (not (eqv? (car args) (cadr args))))
+        ;; implica: falso solo cuando el primero es verdadero y el segundo falso
         (implica-prim ()
           (exigir-cantidad args 2 'implica-prim)
           (exigir-booleanos args 'implica-prim)
           (or (not (car args)) (cadr args)))
+        ;; entre(x, a, b): verdadero si a <= x <= b
         (entre-prim ()
           (exigir-cantidad args 3 'entre-prim)
           (exigir-numeros args 'entre-prim)
