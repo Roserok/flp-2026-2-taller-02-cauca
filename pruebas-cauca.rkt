@@ -1,5 +1,5 @@
 #lang eopl
-;Autores: Nombre1 Codigo1, Nombre2 Codigo2
+;Autores: Maria Fernanda Betancourt Montoya 2459510, Oliver De Jesus Arboleda Baez 2459684, Kevin Andres Rosero Romo 2459554
 
 ;; Taller 2 — El intérprete de Cauca.
 ;; Batería de pruebas con rackunit. Llega escrita en el fork y no se
@@ -203,13 +203,50 @@ in case dia of 1 => 100 of 3 => 300 otherwise => 0 end end") 0))
               (check-exn exn:fail?
                          (lambda () (corre "case true of 1 => 1 otherwise => 0 end"))))))
 
-;; Las suites que agregue el grupo se declaran arriba y se suman aquí.
+;; Las suites que agregue el grupo se declaran arriba y se suman aqui.
+
+(define pruebas-del-grupo
+  (test-suite
+   "Pruebas adicionales del grupo"
+   (test-case "scanner reconoce numeros, identificadores y comentarios"
+              (check-equal? (scanner "42") '((numero 42 1)))
+              (check-equal? (scanner "nombre?")
+                            '((identificador nombre? 1)))
+              (check-not-exn
+               (lambda () (scanner "// comentario\n+(1, -2.5)"))))
+   (test-case "parser construye programas de las expresiones extendidas"
+              (check-equal? (programa? (parser "42")) #t)
+              (check-equal? (programa?
+                             (parser "proc (x) +(x, 1) end"))
+                            #t)
+              (check-equal? (programa?
+                             (parser "letrec f (x) = x in apply f (1) end"))
+                            #t)
+              (check-equal? (programa?
+                             (parser "case 1 of 1 => 2 otherwise => 0 end"))
+                            #t))
+   (test-case "parser rechaza case sin ramas of"
+              (check-exn exn:fail?
+                         (lambda ()
+                           (parser "case 1 otherwise => 0 end"))))
+   (test-case "let evalua todos los rands en el ambiente anterior"
+              (check-equal? (corre "let x = 1 in let x = 2 y = x in y end end")
+                            1))
+   (test-case "primitivas con casos limite validos"
+              (check-equal? (corre "mcd(-12, 18)") 6)
+              (check-equal? (corre "mcm(0, 4)") 0)
+              (check-equal? (corre "entre(5, 10, 1)") #f))
+   (test-case "errores de aridad y tipo adicionales"
+              (check-exn exn:fail? (lambda () (corre "not(true, false)")))
+              (check-exn exn:fail? (lambda () (corre ">=(true, 1)")))
+              (check-exn exn:fail? (lambda () (corre "promedio(true)"))))))
 
 (define fallidas
   (+ (run-tests base)
      (run-tests primitivas-nuevas)
      (run-tests procedimientos)
-     (run-tests recursion-y-case)))
+     (run-tests recursion-y-case)
+     (run-tests pruebas-del-grupo)))
 
 (eopl:printf "~%==========================================~%")
 (eopl:printf "  pruebas fallidas en total: ~s~%" fallidas)
