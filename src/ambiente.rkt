@@ -68,7 +68,7 @@
   (lambda (env id)
     (cases ambiente env
       (ambiente-vacio ()
-        (eopl:error 'apply-env "Variable no ligada: " id))
+        (eopl:error 'apply-env "Variable no ligada: ~s" id))
       (ambiente-extendido (ids valores amb-padre)
         (let ((pos (buscar-posicion id ids)))
           (if pos

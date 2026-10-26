@@ -44,7 +44,7 @@ datatype que genera SLLGEN y sus campos.
             ::= "letrec" {<identificador> "(" {<identificador>}*(,) ")" "=" <expresion>}*
                 "in" <expresion> "end"
                 letrec-exp(proc-names, idss, bodies, body)
-            ::= "case" <expresion> {"of" <numero> "=>" <expresion>}*
+            ::= "case" <expresion> {"of" <numero> "=>" <expresion>}+
                 "otherwise" "=>" <expresion> "end"
                 case-exp(exp, valores, acciones, default)
 

@@ -7,9 +7,9 @@ de Programación — Universidad del Valle, Sede Tuluá.
 
 | Nombre | Código | Correo institucional |
 |--------|--------|----------------------|
-| Maria Fernanda Betancourt Montoya | 2459510 | rosero.kevin@correounivalle.edu.co |
+| Maria Fernanda Betancourt Montoya | 2459510 | maria.fernanda.betancourt@correounivalle.edu.co |
 | Oliver De Jesus Arboleda Baez | 2459684 | oliver.arboleda@correounivalle.edu.co |
-| Kevin Andres Rosero Romo | 2459554 | maria.fernanda.betancourt@correounivalle.edu.co |
+| Kevin Andres Rosero Romo | 2459554 | rosero.kevin@correounivalle.edu.co |
 
 ---
 
@@ -524,10 +524,9 @@ Sea `case-exp(control, valores, acciones, default)` con
 $V = (v_1,\dots,v_n)$ los literales y $A = (a_1,\dots,a_n)$ las acciones,
 $d$ la rama `otherwise`, y $c = \mathsf{vo}(control, \rho)$.
 
-- **Pre-condición:** $|V| = |A| = n \geq 0$ (el parser genera las dos
-  listas desde la misma repetición `arbno`; la gramática de SLLGEN admite
-  $n = 0$, cuyo comportamiento queda cubierto por el caso base) y
-  $\rho$ es un ambiente.
+- **Pre-condición:** $|V| = |A| = n \geq 1$ y $\rho$ es un ambiente.
+  Aunque SLLGEN representa las ramas con `arbno`, `parser` verifica que
+  exista al menos una rama `of`, como exige la gramática de Cauca.
 - **Post-condición.** Se define la selección sobre las listas:
 
   $$
@@ -589,8 +588,9 @@ $$
 
 - **Caso base** $n = 0$: `(null? resto-valores)` es verdadero, y el
   resultado es $\mathsf{vo}(d, \rho)$. Como
-  $\text{sel}(c,[\,],[\,],d) = d$, vale $P(0)$. Este es el caso en que
-  **no hay ninguna coincidencia** y se evalúa `otherwise`.
+  $\text{sel}(c,[\,],[\,],d) = d$, vale $P(0)$. Este caso se alcanza
+  después de revisar todas las ramas sin encontrar coincidencia; entonces
+  se evalúa `otherwise`.
 
 - **Caso inductivo** $n > 0$, con $V = v{::}V'$, $A = a{::}A'$ y $P$
   válido para listas de longitud $n-1$:
